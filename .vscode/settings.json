@@ -1,0 +1,7 @@
+{
+  "lldb.showDisassembly": "auto",
+  "lldb.dereferencePointers": true,
+  "lldb.consoleMode": "commands",
+  "lldb.displayFormat": "hex",
+  "editor.tabSize": 2
+}

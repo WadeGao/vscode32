@@ -20,19 +20,19 @@
 #include "main.h"
 
 #include "gpio.h"
-#include "stm32f407xx.h"
-#include "stm32f4xx_hal_gpio.h"
-#include "stm32f4xx_hal_tim.h"
+#include "stm32f4xx_hal.h"
 #include "tim.h"
+#include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -59,6 +59,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+extern UART_HandleTypeDef huart1;
 /* USER CODE END 0 */
 
 /**
@@ -90,6 +91,7 @@ int main(void) {
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM2_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
@@ -98,7 +100,11 @@ int main(void) {
   /* USER CODE BEGIN WHILE */
   while (1) {
     /* USER CODE END WHILE */
-
+    HAL_Delay(1000);
+    const char *str1 = "Hello World!\r\n";
+    const char *str2 = "Hello STM32!\r\n";
+    HAL_UART_Transmit(&huart1, (uint8_t *)str1, strlen(str1), HAL_MAX_DELAY);
+    HAL_UART_Transmit(&huart1, (uint8_t *)str2, strlen(str2), HAL_MAX_DELAY);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

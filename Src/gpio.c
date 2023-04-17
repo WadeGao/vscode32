@@ -33,13 +33,15 @@
 /* USER CODE END 1 */
 
 /** Configure pins as
- * Analog
- * Input
- * Output
- * EVENT_OUT
- * EXTI
- */
-void MX_GPIO_Init(void) {
+        * Analog
+        * Input
+        * Output
+        * EVENT_OUT
+        * EXTI
+*/
+void MX_GPIO_Init(void)
+{
+
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
@@ -50,7 +52,7 @@ void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9 | GPIO_PIN_10, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9|GPIO_PIN_10, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PE4 */
   GPIO_InitStruct.Pin = GPIO_PIN_4;
@@ -59,7 +61,7 @@ void MX_GPIO_Init(void) {
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PF9 PF10 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9 | GPIO_PIN_10;
+  GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -68,6 +70,7 @@ void MX_GPIO_Init(void) {
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
 }
 
 /* USER CODE BEGIN 2 */

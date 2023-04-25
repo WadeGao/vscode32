@@ -3,5 +3,6 @@
   "lldb.dereferencePointers": true,
   "lldb.consoleMode": "commands",
   "lldb.displayFormat": "hex",
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "cortex-debug.variableUseNaturalFormat": false
 }

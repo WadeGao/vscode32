@@ -20,15 +20,17 @@
 #include "main.h"
 
 #include "gpio.h"
-#include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_uart.h"
 #include "tim.h"
 #include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -92,19 +94,34 @@ int main(void) {
   MX_GPIO_Init();
   MX_TIM2_Init();
   MX_USART1_UART_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+
+  const volatile uint64_t kAutoLoadVal = __HAL_TIM_GetAutoreload(&htim3);
+  __HAL_TIM_SetCompare(&htim3, TIM_CHANNEL_1, kAutoLoadVal / 100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  const char *kMsg = "Led PWM Duty switch.\r\n";
+
   while (1) {
+    uint16_t pwmVal = 0;
+    while (pwmVal < __HAL_TIM_GET_AUTORELOAD(&htim3)) {
+      pwmVal++;
+      __HAL_TIM_SetCompare(&htim3, TIM_CHANNEL_1, pwmVal);
+      HAL_Delay(1);
+    }
+    HAL_UART_Transmit(&huart1, kMsg, strlen(kMsg), 0xffff);
+    while (pwmVal) {
+      --pwmVal;
+      __HAL_TIM_SetCompare(&htim3, TIM_CHANNEL_1, pwmVal);
+      HAL_Delay(1);
+    }
     /* USER CODE END WHILE */
-    HAL_Delay(1000);
-    const char *str1 = "Hello World!\r\n";
-    const char *str2 = "Hello STM32!\r\n";
-    HAL_UART_Transmit(&huart1, (uint8_t *)str1, strlen(str1), HAL_MAX_DELAY);
-    HAL_UART_Transmit(&huart1, (uint8_t *)str2, strlen(str2), HAL_MAX_DELAY);
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -160,7 +177,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-  HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_9);
+  // HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_9);
+  const volatile uint64_t kAutoLoadVal = __HAL_TIM_GetAutoreload(&htim3);
+  const volatile uint64_t kCurCcr =
+      __HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_1);
+  const volatile uint64_t kNewCcr =
+      (kCurCcr + kAutoLoadVal / 20) % kAutoLoadVal;
+  __HAL_TIM_SetCompare(&htim3, TIM_CHANNEL_1, kNewCcr);
 }
 /* USER CODE END 4 */
 

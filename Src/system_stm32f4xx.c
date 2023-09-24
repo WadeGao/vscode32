@@ -95,12 +95,12 @@
 /*!< Uncomment the following line if you need to relocate the vector table
      anywhere in Flash or Sram, else the vector table is kept at the automatic
      remap of boot address selected */
-/* #define USER_VECT_TAB_ADDRESS */
+// #define USER_VECT_TAB_ADDRESS
 
 #if defined(USER_VECT_TAB_ADDRESS)
 /*!< Uncomment the following line if you need to relocate your vector Table
      in Sram else user remap will be done in Flash. */
-/* #define VECT_TAB_SRAM */
+// #define VECT_TAB_SRAM
 #if defined(VECT_TAB_SRAM)
 #define VECT_TAB_BASE_ADDRESS                     \
   SRAM_BASE /*!< Vector Table base address field. \
@@ -744,7 +744,7 @@ void SystemInit_ExtMemCtl(void) {
 
 #endif /* DATA_IN_ExtSRAM */
 #endif /* STM32F405xx || STM32F415xx || STM32F407xx || STM32F417xx || \
-          STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx ||                                        \
+          STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx || \
           STM32F469xx || STM32F479xx || STM32F412Zx || STM32F412Vx  */
   (void)(tmp);
 }

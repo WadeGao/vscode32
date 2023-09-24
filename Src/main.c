@@ -4,8 +4,8 @@
 #include "main.h"
 
 #include "cmsis_os.h"
-#include "portmacro.h"
-#include "stm32f4xx_hal_gpio.h"
+#include "gpio.h"
+#include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -24,17 +24,13 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-osThreadId blink01Handle;
-osThreadId blink02Handle;
+
 /* USER CODE BEGIN PV */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-void StartBlink01(void const *argument);
-void StartBlink02(void const *argument);
-
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 /* USER CODE END PFP */
 
@@ -67,32 +63,12 @@ int main(void) {
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   /* USER CODE END 2 */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* definition and creation of blink01 */
-  osThreadDef(blink01, StartBlink01, osPriorityNormal, 0, 128);
-  blink01Handle = osThreadCreate(osThread(blink01), NULL);
-
-  /* definition and creation of blink02 */
-  osThreadDef(blink02, StartBlink02, osPriorityBelowNormal, 0, 128);
-  blink02Handle = osThreadCreate(osThread(blink02), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* USER CODE END RTOS_THREADS */
+  /* Call init function for freertos objects (in freertos.c) */
+  MX_FREERTOS_Init();
 
   /* Start scheduler */
   osKernelStart();
@@ -143,67 +119,8 @@ void SystemClock_Config(void) {
   }
 }
 
-/**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
-static void MX_GPIO_Init(void) {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-  /* USER CODE END MX_GPIO_Init_1 */
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOF_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9 | GPIO_PIN_10, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : PF9 PF10 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9 | GPIO_PIN_10;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
-
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-  /* USER CODE END MX_GPIO_Init_2 */
-}
-
 /* USER CODE BEGIN 4 */
 /* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_StartBlink01 */
-/* USER CODE END Header_StartBlink01 */
-void StartBlink01(void const *argument) {
-  /* USER CODE BEGIN 5 */
-  TickType_t enter_time = xTaskGetTickCount();
-  for (;;) {
-    HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_9);
-    vTaskDelayUntil(&enter_time, 15);
-  }
-  /* USER CODE END 5 */
-}
-
-/* USER CODE BEGIN Header_StartBlink02 */
-/* USER CODE END Header_StartBlink02 */
-void StartBlink02(void const *argument) {
-  /* USER CODE BEGIN StartBlink02 */
-  TickType_t enter_time = xTaskGetTickCount();
-  for (int i = 0; i < 10; i++) {
-    HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_10);
-    vTaskDelayUntil(&enter_time, 1000);
-  }
-
-  vTaskDelete(blink01Handle);
-  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, 1);
-
-  for (;;) {
-    HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_10);
-    vTaskDelayUntil(&enter_time, 500);
-  }
-  /* USER CODE END StartBlink02 */
-}
 
 /**
  * @brief  Period elapsed callback in non blocking mode

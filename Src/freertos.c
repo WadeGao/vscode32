@@ -19,8 +19,14 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "task.h"
+
+#include <string.h>
+
+#include "cmsis_os.h"
 #include "main.h"
+#include "stm32f4xx_hal_uart.h"
+#include "task.h"
+#include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -46,14 +52,23 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
+osThreadId blink01Handle;
+osThreadId blink02Handle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
 /* USER CODE END FunctionPrototypes */
 
+void StartBlink01(void const *argument);
+void StartBlink02(void const *argument);
+
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
+                                   StackType_t **ppxIdleTaskStackBuffer,
+                                   uint32_t *pulIdleTaskStackSize);
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -68,6 +83,97 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
   /* place for user code */
 }
 /* USER CODE END GET_IDLE_TASK_MEMORY */
+
+/**
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of blink01 */
+  osThreadDef(blink01, StartBlink01, osPriorityNormal, 0, 128);
+  blink01Handle = osThreadCreate(osThread(blink01), NULL);
+
+  /* definition and creation of blink02 */
+  osThreadDef(blink02, StartBlink02, osPriorityBelowNormal, 0, 128);
+  blink02Handle = osThreadCreate(osThread(blink02), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+}
+
+/* USER CODE BEGIN Header_StartBlink01 */
+/**
+ * @brief  Function implementing the blink01 thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartBlink01 */
+void StartBlink01(void const *argument) {
+  /* USER CODE BEGIN StartBlink01 */
+  /* Infinite loop */
+  TickType_t enter_time = xTaskGetTickCount();
+  const char *str = "Blink01\r\n";
+  for (;;) {
+    HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_9);
+    vTaskDelayUntil(&enter_time, 100);
+    HAL_UART_Transmit(&huart1, str, strlen(str), 0xffff);
+  }
+  /* USER CODE END StartBlink01 */
+}
+
+/* USER CODE BEGIN Header_StartBlink02 */
+/**
+ * @brief Function implementing the blink02 thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartBlink02 */
+void StartBlink02(void const *argument) {
+  /* USER CODE BEGIN StartBlink02 */
+  /* Infinite loop */
+  const char *str = "Blink01 deleted\r\n";
+  const char *str1 = "Blink02\r\n";
+  TickType_t enter_time = xTaskGetTickCount();
+  for (int i = 0; i < 10; i++) {
+    HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_10);
+    vTaskDelayUntil(&enter_time, 100);
+    HAL_UART_Transmit(&huart1, str1, strlen(str1), 0xffff);
+  }
+
+  vTaskDelete(blink01Handle);
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, 1);
+  HAL_UART_Transmit(&huart1, str, strlen(str), 0xffff);
+
+  for (;;) {
+    HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_10);
+    vTaskDelayUntil(&enter_time, 500);
+    HAL_UART_Transmit(&huart1, str1, strlen(str1), 0xffff);
+  }
+  /* USER CODE END StartBlink02 */
+}
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */

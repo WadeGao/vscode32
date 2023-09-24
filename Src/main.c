@@ -5,6 +5,7 @@
 
 #include "cmsis_os.h"
 #include "gpio.h"
+#include "retarget.h"
 #include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -65,6 +66,7 @@ int main(void) {
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  RetargetInit(&huart1);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

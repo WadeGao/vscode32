@@ -20,10 +20,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "cmsis_os.h"
 #include "main.h"
+#include "retarget.h"
 #include "stm32f4xx_hal_uart.h"
 #include "task.h"
 #include "usart.h"
@@ -134,12 +136,11 @@ void MX_FREERTOS_Init(void) {
 void StartBlink01(void const *argument) {
   /* USER CODE BEGIN StartBlink01 */
   /* Infinite loop */
-  TickType_t enter_time = xTaskGetTickCount();
-  const char *str = "Blink01\r\n";
+  TickType_t now = xTaskGetTickCount();
   for (;;) {
     HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_9);
-    vTaskDelayUntil(&enter_time, 100);
-    HAL_UART_Transmit(&huart1, str, strlen(str), 0xffff);
+    vTaskDelayUntil(&now, 100);
+    printf("Blink01: %u\r\n", now);
   }
   /* USER CODE END StartBlink01 */
 }
@@ -154,23 +155,21 @@ void StartBlink01(void const *argument) {
 void StartBlink02(void const *argument) {
   /* USER CODE BEGIN StartBlink02 */
   /* Infinite loop */
-  const char *str = "Blink01 deleted\r\n";
-  const char *str1 = "Blink02\r\n";
-  TickType_t enter_time = xTaskGetTickCount();
+  TickType_t now = xTaskGetTickCount();
   for (int i = 0; i < 10; i++) {
     HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_10);
-    vTaskDelayUntil(&enter_time, 100);
-    HAL_UART_Transmit(&huart1, str1, strlen(str1), 0xffff);
+    vTaskDelayUntil(&now, 100);
+    printf("Blink02: %u\r\n", now);
   }
 
   vTaskDelete(blink01Handle);
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, 1);
-  HAL_UART_Transmit(&huart1, str, strlen(str), 0xffff);
+  printf("Blink01 deleted!\r\n");
 
   for (;;) {
     HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_10);
-    vTaskDelayUntil(&enter_time, 500);
-    HAL_UART_Transmit(&huart1, str1, strlen(str1), 0xffff);
+    vTaskDelayUntil(&now, 500);
+    printf("Blink02: %u\r\n", now);
   }
   /* USER CODE END StartBlink02 */
 }

@@ -20,15 +20,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include "cmsis_os.h"
 #include "main.h"
-#include "retarget.h"
-#include "stm32f4xx_hal_uart.h"
+#include "portmacro.h"
+#include "rtc.h"
+#include "stm32f4xx_hal_rtc.h"
 #include "task.h"
-#include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -56,6 +53,7 @@
 /* USER CODE END Variables */
 osThreadId blink01Handle;
 osThreadId blink02Handle;
+osThreadId RtcDateHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -64,6 +62,7 @@ osThreadId blink02Handle;
 
 void StartBlink01(void const *argument);
 void StartBlink02(void const *argument);
+void StartRtcDate(void const *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -121,6 +120,10 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(blink02, StartBlink02, osPriorityBelowNormal, 0, 128);
   blink02Handle = osThreadCreate(osThread(blink02), NULL);
 
+  /* definition and creation of RtcDate */
+  osThreadDef(RtcDate, StartRtcDate, osPriorityNormal, 0, 128);
+  RtcDateHandle = osThreadCreate(osThread(RtcDate), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -172,6 +175,31 @@ void StartBlink02(void const *argument) {
     printf("Blink02: %u\r\n", now);
   }
   /* USER CODE END StartBlink02 */
+}
+
+/* USER CODE BEGIN Header_StartRtcDate */
+/**
+ * @brief Function implementing the RtcDate thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartRtcDate */
+void StartRtcDate(void const *argument) {
+  /* USER CODE BEGIN StartRtcDate */
+  /* Infinite loop */
+  RTC_DateTypeDef rtc_date;
+  RTC_TimeTypeDef rtc_time;
+  TickType_t now = xTaskGetTickCount();
+  for (;;) {
+    HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &rtc_date, RTC_FORMAT_BIN);
+    printf("%d-%02d-%02d ", rtc_date.Year + 2000, rtc_date.Month,
+           rtc_date.Date);
+    printf("%02d:%02d:%02d\r\n", rtc_time.Hours, rtc_time.Minutes,
+           rtc_time.Seconds);
+    vTaskDelayUntil(&now, 1000);
+  }
+  /* USER CODE END StartRtcDate */
 }
 
 /* Private application code --------------------------------------------------*/

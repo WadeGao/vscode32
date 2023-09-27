@@ -20,8 +20,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "rtc.h"
 
+#include <stdio.h>
+
 #include "stm32_hal_legacy.h"
+#include "stm32f4xx.h"
+#include "stm32f4xx_hal_pwr.h"
 #include "stm32f4xx_hal_rcc.h"
+#include "stm32f4xx_hal_rtc.h"
+#include "stm32f4xx_hal_rtc_ex.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -55,7 +61,10 @@ void MX_RTC_Init(void) {
   }
 
   /* USER CODE BEGIN Check_RTC_BKUP */
-
+  if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) == 0x1926) {
+    printf("RTC backup available\r\n");
+    return;
+  }
   /* USER CODE END Check_RTC_BKUP */
 
   /** Initialize RTC and set the Time and Date
@@ -77,7 +86,7 @@ void MX_RTC_Init(void) {
     Error_Handler();
   }
   /* USER CODE BEGIN RTC_Init 2 */
-
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x1926);
   /* USER CODE END RTC_Init 2 */
 }
 

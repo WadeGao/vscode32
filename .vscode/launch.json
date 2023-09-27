@@ -14,7 +14,7 @@
       ],
       "armToolchainPath": "/usr/bin",
       "svdFile": "${workspaceRoot}/STM32F407.svd",
-      "preLaunchTask": "Download To RAM"
+      "preLaunchTask": "Download To Flash"
     }
   ]
 }

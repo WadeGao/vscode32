@@ -56,7 +56,7 @@ add_definitions(-DUSE_HAL_DRIVER -DSTM32F407xx)
 
 file ( GLOB_RECURSE SOURCES "startup_stm32f407xx.s" "Drivers/STM32F4xx_HAL_Driver/*.*" "Src/*.*" "Middlewares/*.*")
 
-set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F407ZGTX_FLASH.ld)
+set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F407ZGTX_RAM.ld)
 
 add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map)
 add_link_options (-mcpu=cortex-m4 -mthumb -mthumb-interwork --specs=nano.specs --specs=nosys.specs)

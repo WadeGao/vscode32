@@ -20,12 +20,15 @@
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 
+#include <stdio.h>
+
 #include "cmsis_os.h"
 #include "main.h"
 #include "portmacro.h"
 #include "rtc.h"
 #include "stm32f4xx_hal_rtc.h"
 #include "task.h"
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */

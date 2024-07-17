@@ -50,13 +50,32 @@ else ()
     add_definitions(-DDEBUG)
 endif ()
 
-include_directories (Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/)
+include_directories ( Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include ThreadX/common/inc ThreadX/ports/cortex_m4/gnu/inc Drivers/STM32F4xx_HAL_Driver/Inc/ Core/Inc/ /usr/arm-none-eabi/include)
 
-add_definitions(-DUSE_HAL_DRIVER -DSTM32F407xx)
+add_definitions(-DSTM32F407xx)
 
-file ( GLOB_RECURSE SOURCES "startup_stm32f407xx.s" "Drivers/STM32F4xx_HAL_Driver/*.*" "Src/*.*" "Middlewares/*.*")
+option(USE_LL "use ll library" OFF)
+if(USE_LL)
+    message(STATUS "use LL library")
+    add_definitions(-DUSE_FULL_LL_DRIVER)
+endif ()
 
-set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F407ZGTX_RAM.ld)
+option(USE_HAL "use HAL library" OFF)
+if(USE_HAL)
+    message(STATUS "use HAL library")
+    add_definitions(-DUSE_HAL_DRIVER) 
+endif ()
+
+file ( GLOB_RECURSE SOURCES "startup_stm32f407xx.s" "Drivers/STM32F4xx_HAL_Driver/*.*" "Core/Src/*.*" "ThreadX/ports/cortex_m4/gnu/src/*.*" "ThreadX/ports/cortex_m4/gnu/example_build/tx_initialize_low_level.S" "ThreadX/common/src/*.*" )
+
+option(TO_RAM "download to ram" OFF)
+if (TO_RAM)
+    message(STATUS "download to ram")
+    set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F407ZGTX_RAM.ld)
+else ()
+    message(STATUS "default download to flash")
+    set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F407ZGTX_FLASH.ld)
+endif ()
 
 add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map)
 add_link_options (-mcpu=cortex-m4 -mthumb -mthumb-interwork --specs=nano.specs --specs=nosys.specs)

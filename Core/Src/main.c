@@ -24,7 +24,11 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "oled_iic.h"
+#include "oled_iic_font.h"
+#include "oled_iic_func.h"
 #include "stm32f407xx.h"
+#include "stm32f4xx_hal.h"
 #include "stm32f4xx_ll_gpio.h"
 #include "stm32f4xx_ll_usart.h"
 #include "tx_api.h"
@@ -47,6 +51,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 
@@ -56,6 +61,7 @@
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -64,10 +70,11 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN 0 */
 
 #define APP1_PRIO 15u  // 优先级，越大越不优先
-#define APP1_STACKSIZE 2048u  // 堆栈大小，注意大于cubemx内设置的最低大小
+#define APP1_STACKSIZE 1024  // 堆栈大小，注意大于cubemx内设置的最低大小
 static uint8_t app1_STACK[APP1_STACKSIZE];  // 堆栈
 static uint8_t app2_STACK[APP1_STACKSIZE];  // 堆栈
-TX_THREAD thread1, thread2;
+static uint8_t app4_STACK[APP1_STACKSIZE];  // 堆栈
+TX_THREAD thread1, thread2, thread4;
 TX_SEMAPHORE sem;
 
 void Led1Blink(ULONG arg) {
@@ -84,16 +91,26 @@ void Led2Blink(ULONG arg) {
     tx_semaphore_get(&sem, TX_WAIT_FOREVER);
     LL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
     tx_thread_sleep(500);
-    const uint32_t tick = tx_time_get();
-    printf("Led2 is blinking, %u\r\n", tick);
   }
 }
+
+void SpiTask(ULONG arg) {
+  while (1) {
+    tx_thread_sleep(500);
+    // OLED_SetPixel(64, 32, 1);
+    // OLED_SetPixel(32, 64, 1);
+  }
+}
+
 void tx_application_define(void *first_unused_memory) {
   tx_semaphore_create(&sem, "sem", 1);
   tx_thread_create(&thread1, "Led1Blink", Led1Blink, 0, &app1_STACK[0],
                    APP1_STACKSIZE, APP1_PRIO, APP1_PRIO, TX_NO_TIME_SLICE,
                    TX_AUTO_START);
   tx_thread_create(&thread2, "Led2Blink", Led2Blink, 0, &app2_STACK[0],
+                   APP1_STACKSIZE, APP1_PRIO, APP1_PRIO, TX_NO_TIME_SLICE,
+                   TX_AUTO_START);
+  tx_thread_create(&thread4, "SpiTask", SpiTask, 0, &app4_STACK[0],
                    APP1_STACKSIZE, APP1_PRIO, APP1_PRIO, TX_NO_TIME_SLICE,
                    TX_AUTO_START);
 }
@@ -113,15 +130,7 @@ int main(void) {
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick.
    */
-  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
-  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
-  /* System interrupt init*/
-  NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-
-  /* SysTick_IRQn interrupt configuration */
-  NVIC_SetPriority(SysTick_IRQn,
-                   NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 15, 0));
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -137,11 +146,22 @@ int main(void) {
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   // HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
   // HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
   LL_GPIO_SetOutputPin(LED1_GPIO_Port, LED1_Pin);
   LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);
+
+  HAL_Delay(1000);
+
+  OLED_Init();
+
+  OLED_ShowStr(0, 0, "Deutschland", 1);
+  OLED_ShowStr(0, 16, "Bayern", 1);
+  OLED_ShowStr(0, 26, "Munich", 1);
+  OLED_ShowStr(0, 36, "Berlin", 1);
+  OLED_HorizontalShift(0, 7, RIGHT);
 
   tx_kernel_enter();
   /* USER CODE END 2 */
@@ -188,8 +208,42 @@ void SystemClock_Config(void) {
   /* Wait till System clock is ready */
   while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
   }
-  LL_Init1msTick(168000000);
   LL_SetSystemCoreClock(168000000);
+
+  /* Update the time base */
+  if (HAL_InitTick(TICK_INT_PRIORITY) != HAL_OK) {
+    Error_Handler();
+  }
+}
+
+/**
+ * @brief I2C1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_I2C1_Init(void) {
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 400000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK) {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
 }
 
 /**
@@ -246,24 +300,24 @@ static void MX_USART1_UART_Init(void) {
  * @retval None
  */
 static void MX_GPIO_Init(void) {
-  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOF);
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /**/
-  LL_GPIO_ResetOutputPin(GPIOF, LED1_Pin | LED2_Pin);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOF, LED1_Pin | LED2_Pin, GPIO_PIN_RESET);
 
-  /**/
+  /*Configure GPIO pins : LED1_Pin LED2_Pin */
   GPIO_InitStruct.Pin = LED1_Pin | LED2_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
   /* USER CODE END MX_GPIO_Init_2 */
@@ -272,6 +326,26 @@ static void MX_GPIO_Init(void) {
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/**
+ * @brief  Period elapsed callback in non blocking mode
+ * @note   This function is called  when TIM2 interrupt took place, inside
+ * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+ * a global variable "uwTick" used as application time base.
+ * @param  htim : TIM handle
+ * @retval None
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM2) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
  * @brief  This function is executed in case of error occurrence.

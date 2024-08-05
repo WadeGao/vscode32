@@ -13,8 +13,9 @@
         "target/stm32f4x.cfg"
       ],
       "armToolchainPath": "/usr/bin",
+      "gdbPath": "/usr/bin/arm-none-eabi-gdb",
       "svdFile": "${workspaceRoot}/STM32F407.svd",
-      "preLaunchTask": "Download To RAM"
+      // "preLaunchTask": "Download To RAM"
     }
   ]
 }
